@@ -8,12 +8,10 @@
 #include <vector>
 
 constexpr uint32_t N = 1e6;
-constexpr bool TRAIT = false;
+constexpr bool TRAIT = true;
 
-inline uint32_t sword_roll(Random &rng) {
-    return rng.uniform_int(1, 6) + rng.uniform_int(1, 6);
-}
-inline uint32_t axe_roll(Random &rng) { return rng.uniform_int(1, 12); }
+inline uint32_t d6_roll(Random &rng) { return rng.uniform_int(1, 6); }
+inline uint32_t d12_roll(Random &rng) { return rng.uniform_int(1, 12); }
 
 void print_histogram(const std::vector<uint32_t> &hist,
                      std::string label = "") {
@@ -46,15 +44,17 @@ int main() {
     std::vector<uint32_t> axe_results, axe_hist(13, 0);
 
     for (uint32_t i = 0; i < N; ++i) {
-        uint32_t sword = sword_roll(rng);
-        uint32_t axe = axe_roll(rng);
+        uint32_t sword1 = d6_roll(rng);
+        uint32_t sword2 = d6_roll(rng);
+        uint32_t axe = d12_roll(rng);
 
         if (TRAIT) { // if uses the Great Weapon Fighter trait
-            (sword < 3) && (sword = sword_roll(rng));
-            (axe < 3) && (axe = axe_roll(rng));
+            (sword1 < 3) && (sword1 = d6_roll(rng));
+            (sword2 < 3) && (sword2 = d6_roll(rng));
+            (axe < 3) && (axe = d12_roll(rng));
         }
-        sword_results.push_back(sword);
-        sword_hist[sword]++;
+        sword_results.push_back(sword1 + sword2);
+        sword_hist[sword1 + sword2]++;
         axe_results.push_back(axe);
         axe_hist[axe]++;
     }
