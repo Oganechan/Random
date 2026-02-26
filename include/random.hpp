@@ -22,17 +22,20 @@ class Random {
     }
 
     template <typename T> T uniform_int(T min, T max) {
-        static_assert(std::is_integral_v<T>);
+        static_assert(std::is_integral<T>::value);
         std::uniform_int_distribution<T> dist(min, max);
         return dist(engine_);
     }
 
-    uint32_t rand32() { return engine_(); }
-    double rand() { return uniform_real(0.0, 1.0); }
-
     template <typename T> T uniform_real(T min, T max) {
-        static_assert(std::is_floating_point_v<T>);
+        static_assert(std::is_floating_point<T>::value);
         std::uniform_real_distribution<T> dist(min, max);
+        return dist(engine_);
+    }
+
+    template <typename T> T normal_distribution(T mean, T stddev) {
+        static_assert(std::is_floating_point<T>::value);
+        std::normal_distribution<T> dist(mean, stddev);
         return dist(engine_);
     }
 
@@ -43,10 +46,21 @@ class Random {
         return dist(engine_);
     }
 
+    uint32_t rand32() { return engine_(); }
+    double rand() { return uniform_real(0.0, 1.0); }
+
     std::mt19937 &engine() { return engine_; }
 
   private:
     std::mt19937 engine_;
+    // std::mt19937_64 engine_;
+    // std::minstd_rand0 engine_;
+    // std::minstd_rand engine_;
+    // std::knuth_b engine_;
+    // std::ranlux24_base engine_;
+    // std::ranlux48_base engine_;
+    // std::ranlux24 engine_;
+    // std::ranlux48 engine_;
 };
 
 inline Random &thread_local_random() {
