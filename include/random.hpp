@@ -5,72 +5,118 @@
 #include <random>
 #include <stdexcept>
 #include <type_traits>
+#include <tuple>
 
-class Random {
-  public:
+class Random
+{
+public:
     Random(const Random &) = delete;
     Random &operator=(const Random &) = delete;
     Random(Random &&) = default;
     Random &operator=(Random &&) = default;
 
-    explicit Random() { reseed(); }
-    explicit Random(uint32_t sd) : engine_(sd) {}
+    explicit Random() { random_reseed(); }
+    explicit Random(uint32_t sd) { set_seed(sd); }
 
-    void reseed() {
+    void random_reseed()
+    {
         std::random_device rd;
-        engine_.seed(rd());
+        seed_ = rd();
+        engine_.seed(seed_);
     }
 
-    template <typename T> T uniform_int(T min, T max) {
-        static_assert(std::is_integral<T>::value);
-        std::uniform_int_distribution<T> dist(min, max);
+    void set_seed(uint32_t sd)
+    {
+        seed_ = sd;
+        engine_.seed(seed_);
+    }
+
+    template <typename T>
+    T uniform_int(const T min, const T max)
+    {
+        static_assert(std::is_integral_v<T> && !std::is_same_v<T, bool>,
+                      "T must be non-boolean integral type");
+
+        auto &dist = std::get<std::uniform_int_distribution<T>>(int_dists_);
+
+        typename std::uniform_int_distribution<T>::param_type new_param(min, max);
+        if (dist.param() != new_param)
+            dist.param(new_param);
+
         return dist(engine_);
     }
 
-    template <typename T> T uniform_real(T min, T max) {
-        static_assert(std::is_floating_point<T>::value);
-        std::uniform_real_distribution<T> dist(min, max);
+    template <typename T>
+    T uniform_real(const T min, const T max)
+    {
+        static_assert(std::is_floating_point_v<T>,
+                      "T must be floating point type");
+
+        auto &dist = std::get<std::uniform_real_distribution<T>>(real_dists_);
+
+        typename std::uniform_real_distribution<T>::param_type new_param(min, max);
+        if (dist.param() != new_param)
+            dist.param(new_param);
+
         return dist(engine_);
     }
 
-    template <typename T> T normal_distribution(T mean, T stddev) {
-        static_assert(std::is_floating_point<T>::value);
-        std::normal_distribution<T> dist(mean, stddev);
+    template <typename T>
+    T normal_distribution(const T mean, const T stddev)
+    {
+        static_assert(std::is_floating_point_v<T>,
+                      "T must be floating point type");
+
+        auto &dist = std::get<std::normal_distribution<T>>(normal_dists_);
+
+        typename std::normal_distribution<T>::param_type new_param(mean, stddev);
+        if (dist.param() != new_param)
+            dist.param(new_param);
+
         return dist(engine_);
     }
 
-    bool bernoulli(double p = 0.5) {
+    bool bernoulli(const double p = 0.5)
+    {
         if (p < 0.0 || p > 1.0)
-            throw std::out_of_range("");
-        std::bernoulli_distribution dist(p);
-        return dist(engine_);
+            throw std::out_of_range("p must be between 0 and 1");
+
+        typename std::bernoulli_distribution::param_type new_param(p);
+        if (bernoulli_dist_.param() != new_param)
+            bernoulli_dist_.param(new_param);
+
+        return bernoulli_dist_(engine_);
     }
 
     uint32_t rand32() { return engine_(); }
-    double rand() { return uniform_real(0.0, 1.0); }
+    double rand() { return uniform_real<double>(0.0, 1.0); }
 
     std::mt19937 &engine() { return engine_; }
+    const std::mt19937 &engine() const { return engine_; }
+    uint32_t seed() const { return seed_; }
 
-  private:
+private:
     std::mt19937 engine_;
-    // std::mt19937_64 engine_;
-    // std::minstd_rand0 engine_;
-    // std::minstd_rand engine_;
-    // std::knuth_b engine_;
-    // std::ranlux24_base engine_;
-    // std::ranlux48_base engine_;
-    // std::ranlux24 engine_;
-    // std::ranlux48 engine_;
+    uint32_t seed_;
+
+    std::tuple<
+        std::uniform_int_distribution<int>,
+        std::uniform_int_distribution<unsigned int>,
+        std::uniform_int_distribution<long>,
+        std::uniform_int_distribution<unsigned long>>
+        int_dists_;
+
+    std::tuple<
+        std::uniform_real_distribution<float>,
+        std::uniform_real_distribution<double>>
+        real_dists_;
+
+    std::tuple<
+        std::normal_distribution<float>,
+        std::normal_distribution<double>>
+        normal_dists_;
+
+    std::bernoulli_distribution bernoulli_dist_;
 };
-
-inline Random &thread_local_random() {
-    thread_local Random rng;
-    return rng;
-}
-
-inline Random &thread_local_random(uint32_t sd) {
-    thread_local Random rng(sd);
-    return rng;
-}
 
 #endif // RANDOM_HPP
