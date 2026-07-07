@@ -11,4 +11,8 @@ Run the compilation script:
 ```bash
 bash fast_compilate.sh
 ```
+or debug mode:
+```bash
+bash fast_compilate.sh -d
+```
 After compilation, you can run any of the example programs
