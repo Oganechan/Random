@@ -4,7 +4,8 @@
 #include <iterator>
 #include <string>
 
-char uniform_char_distribution(uint32_t rn) {
+char uniform_char_distribution(uint32_t rn)
+{
     static const std::string chars = "ABCDEFGHIJKLMNOPQESTUVWXYZ"
                                      "abcdefghijklmnopqrstuvwxyz"
                                      "1234567890"
@@ -13,15 +14,18 @@ char uniform_char_distribution(uint32_t rn) {
     return chars[rn % std::size(chars)];
 }
 
-int main() {
-    Random &rng = thread_local_random();
+int main()
+{
+    Random rng;
 
     std::cout << "10 random passwords:\n";
-    for (int p = 0; p < 10; p++) {
+    for (int p = 0; p < 10; p++)
+    {
         std::string password = "";
         uint32_t length = rng.uniform_int(12, 24);
 
-        for (uint32_t i = 0; i < length; ++i) {
+        for (uint32_t i = 0; i < length; ++i)
+        {
             password += uniform_char_distribution(rng.rand32());
         }
         std::cout << " " << password << "\n";
